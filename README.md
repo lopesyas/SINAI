@@ -1,26 +1,71 @@
 # SINAI — Sistema Inteligente de Navegação e Atendimento Inclusivo
 
-Camada digital de acessibilidade para consultas médicas com pacientes surdos, reduzindo barreiras de comunicação quando não há intérprete de Libras disponível.
+Plataforma de comunicação acessível entre profissionais de saúde e pacientes surdos para atendimentos sem intérprete de Libras presente.
 
-Contexto inicial de validação: hospital universitário (referência HC-UFPE).
+## Como rodar (desenvolvimento local)
 
-## Documentação
+### Backend (FastAPI + SQLite)
 
-| # | Documento | Conteúdo |
-|---|-----------|----------|
-| 1 | [Visão do Produto](docs/01-visao-produto.md) | Problema, público, proposta de valor, escopo |
-| 2 | [Arquitetura Técnica](docs/02-arquitetura-tecnica.md) | Componentes, diagrama, fluxo de dados |
-| 3 | [Stack de Tecnologias](docs/03-stack-tecnologias.md) | Escolhas e justificativas |
-| 4 | [Roadmap](docs/04-roadmap.md) | Fases 1, 2 e 3 |
-| 5 | [Backlog Priorizado](docs/05-backlog-priorizado.md) | Épicos e itens do MVP |
-| 6 | [User Stories](docs/06-user-stories.md) | Histórias médico/paciente + critérios de aceite |
-| 7 | [Banco de Dados](docs/07-banco-de-dados.md) | Modelo ER e tabelas |
-| 8 | [APIs](docs/08-apis.md) | REST + eventos WebSocket |
-| 9 | [Fluxo de Telas](docs/09-fluxo-telas.md) | Telas paciente/médico |
-| 10 | [Plano de Implementação](docs/10-plano-implementacao.md) | Equipe pequena, sprints de 30 dias |
-| 11 | [Estratégia de Validação HC-UFPE](docs/11-estrategia-validacao-hcufpe.md) | Piloto, métricas, ética/LGPD |
-| 12 | [Riscos e Mitigação](docs/12-riscos-mitigacao.md) | Riscos técnicos e de produto |
+```bash
+cd backend
+./start.sh
+# ou: venv/bin/uvicorn app.main:app --reload --port 8000
+```
 
-## Escopo do MVP (30 dias)
+API disponível em: http://localhost:8000  
+Docs automáticos: http://localhost:8000/docs
 
-Chat bilateral médico↔paciente com tradução assistida português→Libras (avatar/vídeo via solução existente), biblioteca visual de sintomas para resposta do paciente, e histórico de conversa. **Não** inclui reconhecimento livre de Libras, modelo próprio de visão computacional ou integração com prontuário eletrônico — isso fica para as fases 2 e 3.
+### Frontend (React + Vite)
+
+```bash
+cd frontend
+npm run dev
+```
+
+App disponível em: http://localhost:5173
+
+### Fluxo de uso
+
+1. Abrir http://localhost:5173 no monitor do **médico**
+2. Criar atendimento → será gerado o ID e o link do monitor do paciente
+3. Copiar o link e abrir no monitor/tablet do **paciente**
+4. Comunicação em tempo real via WebSocket:
+   - Médico digita ou usa voz → texto chega em Libras para o paciente (via VLibras)
+   - Paciente responde via biblioteca visual → frase estruturada chega para o médico
+
+## Estrutura
+
+```
+SINAI/
+├── backend/
+│   ├── app/
+│   │   ├── main.py          # FastAPI app, CORS, lifespan
+│   │   ├── models.py        # SQLAlchemy models
+│   │   ├── database.py      # SQLite engine + session
+│   │   ├── schemas.py       # Pydantic schemas
+│   │   ├── simplificador.py # Dicionário clínico de simplificação
+│   │   ├── ws_manager.py    # Gerenciador de salas WebSocket
+│   │   ├── seed.py          # Dados iniciais (hospital, biblioteca visual)
+│   │   └── routers/
+│   │       ├── atendimentos.py  # REST endpoints
+│   │       ├── biblioteca.py    # GET /biblioteca-visual
+│   │       └── websocket.py     # WS /ws/atendimentos/{id}/{papel}
+│   └── venv/
+└── frontend/
+    └── src/
+        ├── App.jsx
+        ├── pages/
+        │   ├── NovoAtendimento.jsx  # Criação de sessão
+        │   ├── MonitorMedico.jsx    # Chat + voz + histórico
+        │   └── MonitorPaciente.jsx  # Libras + biblioteca visual
+        ├── context/
+        │   └── AtendimentoContext.jsx  # WebSocket + estado compartilhado
+        ├── components/
+        │   ├── Logo.jsx
+        │   ├── Button.jsx
+        │   ├── Card.jsx
+        │   ├── StatusBadge.jsx
+        │   └── GeometricBackground.jsx
+        └── services/
+            └── api.js
+```

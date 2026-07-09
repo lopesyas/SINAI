@@ -1,6 +1,8 @@
 # 7. Estrutura do Banco de Dados
 
-PostgreSQL, acessado via Prisma. Modelo pensado para o mínimo necessário no MVP — nada de dados sensíveis do paciente além do estritamente necessário para o atendimento (ver nota de LGPD ao final).
+SQLite, acessado via SQLAlchemy (Python) — um único arquivo de banco, sem servidor separado para instalar ou manter no MVP. Modelo pensado para o mínimo necessário — nada de dados sensíveis do paciente além do estritamente necessário para o atendimento (ver nota de LGPD ao final).
+
+Os tipos de coluna abaixo (`uuid`, `timestamptz`, `enum`) são a intenção do modelo; em SQLite/SQLAlchemy isso se traduz, na prática, para `String` (para uuid, gerado em Python), `DateTime` e `String` com valores restritos por `Enum` do Python (SQLite não tem tipo `enum` nativo).
 
 ## Modelo ER (texto)
 

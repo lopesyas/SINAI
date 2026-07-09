@@ -4,8 +4,8 @@
 
 | Papel | Dedicação | Responsabilidade |
 |-------|-----------|-------------------|
-| 1 dev full-stack (líder técnico) | Full-time | Backend (NestJS, WebSocket, integrações VLibras), modelo de dados |
-| 1 dev frontend | Full-time | Next.js, telas paciente/médico, identidade visual |
+| 1 dev full-stack (líder técnico) | Full-time | Backend (FastAPI, WebSocket, integração VLibras), modelo de dados |
+| 1 dev frontend | Full-time | React, telas paciente/médico, identidade visual |
 | 1 designer (part-time, pode ser a mesma pessoa validando a paleta já definida) | ~20% do tempo | Cards, ilustrações, refinamento de acessibilidade visual |
 | 1 responsável por validação clínica/produto | ~20% do tempo | Ponte com o hospital, roteiro de piloto, revisão da simplificação de texto clínico |
 
@@ -14,9 +14,9 @@ Com 2 devs full-time é possível cobrir todo o backlog Must do MVP em 4 sprints
 ## Cronograma por sprint
 
 ### Sprint 1 (dias 1–7) — Fundação
-- Setup dos repositórios e ambientes (Vercel, Render/Railway, Postgres).
-- Modelo de dados (Prisma) e migrations iniciais.
-- Gateway WebSocket básico (join de sala, eco de mensagem).
+- Setup dos repositórios e ambientes (Vercel/Netlify, Render/Railway).
+- Modelo de dados (SQLAlchemy) e criação do banco SQLite.
+- Endpoint WebSocket básico (entrada na sala, eco de mensagem).
 - Telas estáticas (sem lógica) aplicando a paleta e o componente Card.
 
 ### Sprint 2 (dias 8–14) — Comunicação médico → paciente

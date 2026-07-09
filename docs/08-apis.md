@@ -30,49 +30,46 @@ Registra feedback pós-atendimento (piloto).
 { "papel": "medico", "nota": 5, "comentario": "opcional" }
 ```
 
-## WebSocket (tempo real — Socket.IO)
+## WebSocket (tempo real — WebSocket nativo do FastAPI)
 
-Cada atendimento é uma **sala** (`room = atendimento_id`). Paciente e médico entram na mesma sala ao abrir suas respectivas telas.
+Endpoint único: `WS /ws/atendimentos/{atendimento_id}/{papel}` (papel = `medico` ou `paciente`). O FastAPI mantém, em memória, a lista de conexões abertas por `atendimento_id` — isso é a "sala". Cada mensagem trocada é um JSON com um campo `evento` para o cliente saber como tratá-la (o WebSocket nativo não tem roteamento de eventos embutido como o Socket.IO, então esse campo faz esse papel).
 
-### Evento: `join_atendimento`
-Emitido pelo cliente ao conectar.
+### Cliente → servidor: `mensagem_medico`
+Enviado pelo monitor do médico ao enviar texto ou voz transcrita.
 ```json
-{ "atendimentoId": "uuid", "papel": "medico" }
+{ "evento": "mensagem_medico", "tipo": "texto", "conteudoOriginal": "Você está com dor onde?" }
 ```
+Servidor processa (simplificação clínica) e retransmite para todos os conectados na sala:
 
-### Evento: `mensagem_medico`
-Emitido pelo monitor do médico ao enviar texto ou voz transcrita.
-```json
-{ "atendimentoId": "uuid", "tipo": "texto", "conteudoOriginal": "Você está com dor onde?" }
-```
-Servidor processa (simplificação → VLibras) e retransmite para a sala:
-
-### Evento: `mensagem_para_paciente` (servidor → clientes da sala)
+### Servidor → clientes da sala: `mensagem_para_paciente`
 ```json
 {
+  "evento": "mensagem_para_paciente",
   "mensagemId": "uuid",
   "conteudoOriginal": "Você está com dor onde?",
-  "conteudoSimplificado": "Onde você sente dor?",
-  "libras": { "provider": "vlibras", "texto": "Onde você sente dor?" }
+  "conteudoSimplificado": "Onde você sente dor?"
 }
 ```
+O frontend do paciente pega `conteudoSimplificado` e passa para o widget VLibras exibir a tradução.
 
-### Evento: `mensagem_paciente`
-Emitido pelo monitor do paciente ao concluir uma seleção na biblioteca visual.
+### Cliente → servidor: `mensagem_paciente`
+Enviado pelo monitor do paciente ao concluir uma seleção na biblioteca visual.
 ```json
-{ "atendimentoId": "uuid", "tipo": "simbolo_estruturado", "conteudoOriginal": "Paciente relata muita dor na cabeça." }
+{ "evento": "mensagem_paciente", "tipo": "simbolo_estruturado", "conteudoOriginal": "Paciente relata muita dor na cabeça." }
 ```
 Servidor retransmite para a sala:
 
-### Evento: `mensagem_para_medico` (servidor → clientes da sala)
+### Servidor → clientes da sala: `mensagem_para_medico`
 ```json
-{ "mensagemId": "uuid", "conteudoOriginal": "Paciente relata muita dor na cabeça.", "criadoEm": "2026-07-07T10:02:00Z" }
+{ "evento": "mensagem_para_medico", "mensagemId": "uuid", "conteudoOriginal": "Paciente relata muita dor na cabeça.", "criadoEm": "2026-07-07T10:02:00Z" }
 ```
 
-### Evento: `status_atendimento` (servidor → clientes da sala)
+### Servidor → clientes da sala: `status_atendimento`
 Notifica mudança de status (ex.: `em_andamento`, `finalizado`).
+
+Como o WebSocket nativo não reconecta sozinho (diferente do Socket.IO), o frontend implementa uma reconexão simples (tentar de novo após queda de conexão) e, ao reconectar, chama `GET /atendimentos/:id/mensagens` para recompor o histórico que possa ter sido perdido.
 
 ## Integrações externas
 
-- **VLibras**: chamada feita pelo backend (não pelo frontend), para manter a chave/uso centralizado e permitir troca futura de provedor sem alterar o cliente.
+- **VLibras**: o widget roda direto no navegador do paciente (script público do gov.br), sem chamada de backend — o backend só entrega o texto já simplificado.
 - **Web Speech API**: roda no navegador do médico (client-side); o backend só recebe o texto já transcrito via evento `mensagem_medico`.

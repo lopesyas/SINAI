@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Paleta SINAI */
+  --color-royal: #14275E;
+  --color-vibrant: #2F6FED;
+  --color-beige: #F1E8D8;
+  --color-offwhite: #FFFDF8;
+  --color-dark: #2E2E2E;
+
+  /* Tipografia */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Nunito', 'Inter', system-ui, sans-serif;
+
+  /* Border radius */
+  --radius-card: 1.25rem;
+  --radius-btn: 0.875rem;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #FFFFFF;
+  color: #2E2E2E;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fundo decorativo sutil — pontos geométricos translúcidos */
+.bg-dots {
+  background-image:
+    radial-gradient(circle, rgba(47,111,237,0.07) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+
+/* Scrollbar fina */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(47,111,237,0.25); border-radius: 4px; }

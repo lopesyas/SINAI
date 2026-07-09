@@ -5,7 +5,7 @@ Priorização por método MoSCoW (Must / Should / Could / Won't nesta fase).
 ## Épico A — Infraestrutura base
 | Item | Prioridade |
 |------|-----------|
-| Setup do projeto (Next.js + NestJS + Postgres + Prisma) | Must |
+| Setup do projeto (React + FastAPI + SQLite) | Must |
 | Modelo de dados de atendimento/mensagem | Must |
 | Conexão WebSocket por sala de atendimento | Must |
 | Deploy contínuo (Vercel + Render/Railway) | Must |
