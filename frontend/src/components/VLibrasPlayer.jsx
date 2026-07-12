@@ -338,7 +338,6 @@ export function VLibrasPlayer({ texto, autoplay = true }) {
     if (fase !== 'pronto' || !containerRef.current) return
 
     definirAncora(containerRef.current)
-    ancoradoRef.current = true
 
     // Se já temos texto esperando, traduz agora
     if (autoplay && texto && textoAnteriorRef.current !== texto) {
@@ -347,7 +346,6 @@ export function VLibrasPlayer({ texto, autoplay = true }) {
 
     return () => {
       liberarAncoraSe(containerRef.current)
-      ancoradoRef.current = false
     }
   }, [fase])
 
