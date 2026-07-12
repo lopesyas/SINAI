@@ -10,7 +10,7 @@ from app.seed import run_seed
 from app.database import SessionLocal
 
 # Origens permitidas: sempre localhost + qualquer URL configurada via env
-# FRONTEND_URL deve ser setada no Railway com a URL da Vercel, ex:
+# FRONTEND_URL deve ser setada no Render com a URL da Vercel, ex:
 #   https://sinai.vercel.app
 _extra_origins = os.environ.get("FRONTEND_URL", "")
 ALLOWED_ORIGINS = [

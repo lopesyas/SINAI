@@ -2,11 +2,11 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-# Railway injeta DATABASE_URL automaticamente com PostgreSQL.
-# Localmente, cai para SQLite.
+# Se um provedor (ex: Render com addon Postgres) injetar DATABASE_URL, usa Postgres.
+# Localmente, e sem addon configurado, cai para SQLite.
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./sinai.db")
 
-# SQLAlchemy 1.4+ exige "postgresql://" mas Railway fornece "postgres://"
+# SQLAlchemy 1.4+ exige "postgresql://" mas alguns provedores fornecem "postgres://"
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 

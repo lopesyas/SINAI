@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
 import { Logo } from '../components/Logo'
@@ -7,57 +7,28 @@ import { GeometricBackground } from '../components/GeometricBackground'
 
 export default function NovoAtendimento() {
   const navigate = useNavigate()
-  const [profissionais, setProfissionais] = useState([])
-  const [profissionalId, setProfissionalId] = useState('')
+  const [nome, setNome] = useState('')
+  const [cargo, setCargo] = useState('Médico')
   const [pacienteRef, setPacienteRef] = useState('')
-  const [novoNome, setNovoNome] = useState('')
-  const [novoCargo, setNovoCargo] = useState('Médico')
-  const [mostraCadastro, setMostraCadastro] = useState(false)
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
-  useEffect(() => {
-    api.listarProfissionais()
-      .then((list) => {
-        setProfissionais(list)
-        if (list.length > 0) setProfissionalId(list[0].id)
-        else setMostraCadastro(true)
-      })
-      .catch(() => setMostraCadastro(true))
-  }, [])
-
-  async function handleCriarProfissional(e) {
-    e.preventDefault()
-    if (!novoNome.trim()) return
-    setLoading(true)
-    try {
-      const prof = await api.criarProfissional({
-        nome: novoNome,
-        cargo: novoCargo,
-        hospital_nome: 'HC-UFPE',
-      })
-      setProfissionais((prev) => [...prev, prof])
-      setProfissionalId(prof.id)
-      setMostraCadastro(false)
-      setNovoNome('')
-    } catch (e) {
-      setErro(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   async function handleIniciar(e) {
     e.preventDefault()
-    if (!profissionalId || !pacienteRef.trim()) {
+    if (!nome.trim() || !pacienteRef.trim()) {
       setErro('Preencha todos os campos.')
       return
     }
     setLoading(true)
     setErro('')
     try {
+      const prof = await api.criarProfissional({
+        nome: nome.trim(),
+        cargo,
+        hospital_nome: 'HC-UFPE',
+      })
       const atend = await api.criarAtendimento({
-        profissional_id: profissionalId,
+        profissional_id: prof.id,
         paciente_ref: pacienteRef.trim(),
       })
       navigate(`/atendimento/${atend.id}/medico`)
@@ -97,83 +68,36 @@ export default function NovoAtendimento() {
           <div
             className="rounded-[24px] border-2 border-[#F1E8D8] bg-[#FFFDF8] p-8 shadow-lg"
           >
-            {/* Cadastro de profissional */}
-            {mostraCadastro ? (
-              <form onSubmit={handleCriarProfissional} className="space-y-4 mb-6">
-                <p className="text-sm font-semibold" style={{ color: '#14275E' }}>
-                  Cadastrar profissional
-                </p>
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#2E2E2E' }}>
-                    Nome completo
-                  </label>
-                  <input
-                    type="text"
-                    value={novoNome}
-                    onChange={(e) => setNovoNome(e.target.value)}
-                    placeholder="Dr. João Silva"
-                    className="w-full border-2 border-[#F1E8D8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#2F6FED] transition bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#2E2E2E' }}>
-                    Cargo
-                  </label>
-                  <select
-                    value={novoCargo}
-                    onChange={(e) => setNovoCargo(e.target.value)}
-                    className="w-full border-2 border-[#F1E8D8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#2F6FED] transition bg-white"
-                  >
-                    <option>Médico</option>
-                    <option>Enfermeiro</option>
-                    <option>Técnico de Enfermagem</option>
-                  </select>
-                </div>
-                <div className="flex gap-3">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    {loading ? 'Salvando…' : 'Salvar'}
-                  </Button>
-                  {profissionais.length > 0 && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => setMostraCadastro(false)}
-                      className="flex-1"
-                    >
-                      Cancelar
-                    </Button>
-                  )}
-                </div>
-              </form>
-            ) : null}
-
             {/* Formulário principal */}
             <form onSubmit={handleIniciar} className="space-y-5">
-              {/* Seleção de profissional */}
+              {/* Nome do profissional */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium" style={{ color: '#2E2E2E' }}>
-                    Profissional de saúde
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setMostraCadastro(true)}
-                    className="text-xs font-semibold"
-                    style={{ color: '#2F6FED' }}
-                  >
-                    + Novo
-                  </button>
-                </div>
-                <select
-                  value={profissionalId}
-                  onChange={(e) => setProfissionalId(e.target.value)}
+                <label className="block text-sm font-medium mb-1" style={{ color: '#2E2E2E' }}>
+                  Nome do profissional
+                </label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Dr. João Silva"
                   className="w-full border-2 border-[#F1E8D8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#2F6FED] transition bg-white"
                   required
+                />
+              </div>
+
+              {/* Cargo */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: '#2E2E2E' }}>
+                  Cargo
+                </label>
+                <select
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  className="w-full border-2 border-[#F1E8D8] rounded-xl px-4 py-3 text-base focus:outline-none focus:border-[#2F6FED] transition bg-white"
                 >
-                  {profissionais.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome} — {p.cargo}
-                    </option>
-                  ))}
+                  <option>Médico</option>
+                  <option>Enfermeiro</option>
+                  <option>Técnico de Enfermagem</option>
                 </select>
               </div>
 

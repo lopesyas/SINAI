@@ -2,8 +2,8 @@
  * Camada de comunicação com a API SINAI.
  *
  * Em desenvolvimento: usa o proxy do Vite (/api → localhost:8000)
- * Em produção (Vercel): VITE_API_URL aponta para o Railway, ex:
- *   VITE_API_URL=https://sinai-backend.up.railway.app
+ * Em produção (Vercel): VITE_API_URL aponta para o backend no Render, ex:
+ *   VITE_API_URL=https://sinai-backend.onrender.com
  *
  * Configurar na Vercel: Settings → Environment Variables → VITE_API_URL
  */
