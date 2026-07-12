@@ -3,19 +3,15 @@
  *
  * Estratégia baseada no código-fonte real do vlibras-plugin.js:
  *
- *   1. Injeta o container [vw] no body (HTML oficial), sempre no mesmo lugar
+ *   1. Injeta o container [vw] no body (HTML oficial)
  *   2. Carrega vlibras-plugin.js e instancia new window.VLibras.Widget(...)
  *   3. Simula clique no [vw-access-button] para inicializar window.plugin
  *   4. Abre o "translator screen" do widget
  *   5. Preenche a textarea interna (.vp-user-textarea) com o texto
  *   6. Clica no botão .vp-play-gloss-button para acionar a animação do avatar
  *
- * O canvas WebGL do avatar (Unity) NUNCA é reanexado a outro nó do DOM —
- * reparentar um canvas WebGL ativo derruba o contexto gráfico e gera
- * "Uncaught RuntimeError: memory access out of bounds". Em vez de mover o
- * elemento, mantemos #vlibras-root fixo no body e só reposicionamos por CSS
- * (position: fixed + coordenadas via getBoundingClientRect) para que ele
- * pareça "dentro" do nosso card.
+ * O widget é renderizado INLINE na nossa área (não é flutuante).
+ * O botão flutuante padrão é ocultado via CSS.
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
 
@@ -38,78 +34,13 @@ function assinarEstado(fn) {
   }
 }
 
-// ── Ancoragem visual (sem reparentar o canvas WebGL) ───────────────────────
-let elementoAncoraAtual = null
-let loopSincronizacaoAtivo = false
-let rafId = null
-
-function sincronizarPosicao() {
-  const root = document.getElementById('vlibras-root')
-  if (!root) return
-
-  if (!elementoAncoraAtual || !document.body.contains(elementoAncoraAtual)) {
-    root.style.cssText = 'position:fixed;bottom:-9999px;right:-9999px;opacity:0;pointer-events:none;z-index:-1'
-    return
-  }
-
-  const rect = elementoAncoraAtual.getBoundingClientRect()
-  root.style.cssText = `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px;opacity:1;pointer-events:auto;z-index:30;border-radius:20px;overflow:hidden;`
-}
-
-function definirAncora(el) {
-  elementoAncoraAtual = el
-  sincronizarPosicao()
-
-  if (el && !loopSincronizacaoAtivo) {
-    loopSincronizacaoAtivo = true
-    const loop = () => {
-      if (!elementoAncoraAtual) {
-        loopSincronizacaoAtivo = false
-        return
-      }
-      sincronizarPosicao()
-      rafId = requestAnimationFrame(loop)
-    }
-    rafId = requestAnimationFrame(loop)
-  }
-
-  if (!el && rafId) {
-    cancelAnimationFrame(rafId)
-    rafId = null
-    loopSincronizacaoAtivo = false
-  }
-}
-
-function liberarAncoraSe(el) {
-  if (elementoAncoraAtual === el) {
-    definirAncora(null)
-  }
-}
-
 // ── Inicialização do widget ────────────────────────────────────────────────
-
-// O runtime Unity/WebGL do avatar VLibras chama window.alert() diretamente
-// quando crasha (ex: "memory access out of bounds" ao mover o canvas no DOM).
-// Interceptamos para não travar a tela com um alert nativo e cair no fallback de texto.
-function interceptarAlertDoUnity() {
-  const alertOriginal = window.alert
-  window.alert = function (mensagem) {
-    if (typeof mensagem === 'string' && /unity content|memory access out of bounds/i.test(mensagem)) {
-      console.warn('VLibras: avatar Unity crashou, usando fallback de texto:', mensagem)
-      notificarListeners('erro')
-      return
-    }
-    alertOriginal.call(window, mensagem)
-  }
-}
 
 function iniciarVLibras() {
   if (estadoGlobal.fase !== 'nao_iniciado') return
   notificarListeners('carregando')
-  interceptarAlertDoUnity()
 
-  // 1. Cria container oficial do widget no body — este nó NUNCA é movido;
-  // sincronizarPosicao() apenas ajusta sua posição via CSS fixed.
+  // 1. Cria container oficial do widget no body
   if (!document.getElementById('vlibras-root')) {
     const div = document.createElement('div')
     div.id = 'vlibras-root'
@@ -121,27 +52,38 @@ function iniciarVLibras() {
         <div class="vw-plugin-top-wrapper"></div>
       </div>
     `
+    // Esconde visualmente mas mantém funcional
+    div.style.cssText = 'position:fixed;bottom:-9999px;right:-9999px;opacity:0;pointer-events:none;z-index:-1'
     document.body.appendChild(div)
-    sincronizarPosicao()
   }
 
-  // 2. CSS interno do widget — o wrapper preenche 100% de #vlibras-root
+  // 2. CSS para mover o plugin-wrapper para nossa área personalizada
   const style = document.createElement('style')
   style.id = 'vlibras-sinai-style'
   style.textContent = `
-    #vlibras-root [vw-plugin-wrapper] {
+    /* Oculta o container original — usamos nossa área */
+    #vlibras-root { display: block !important; }
+
+    /* Quando movido para nossa área, remove o posicionamento fixo */
+    .vlibras-sinai-player [vw-plugin-wrapper] {
       position: static !important;
       float: none !important;
       display: flex !important;
       flex-direction: column !important;
       width: 100% !important;
-      height: 100% !important;
-      border-radius: inherit !important;
+      height: 380px !important;
+      border-radius: 20px !important;
       overflow: hidden !important;
       box-shadow: none !important;
     }
 
-    #vlibras-root [vw-access-button] {
+    /* Garante que o player ocupa toda a área */
+    .vlibras-sinai-player [vw-plugin-wrapper].active {
+      min-height: 380px !important;
+    }
+
+    /* Oculta elementos que não queremos mostrar */
+    .vlibras-sinai-player [vw-access-button] {
       display: none !important;
     }
   `
@@ -313,6 +255,7 @@ export function VLibrasPlayer({ texto, autoplay = true }) {
   const [modoFallback, setModoFallback] = useState(false)
   const containerRef = useRef(null)
   const textoAnteriorRef = useRef(null)
+  const wrapperMovidoRef = useRef(false)
   const timeoutRef = useRef(null)
 
   // Assina mudanças de estado do widget global
@@ -332,20 +275,20 @@ export function VLibrasPlayer({ texto, autoplay = true }) {
     return cancelar
   }, [])
 
-  // Quando o widget fica pronto, ancora #vlibras-root visualmente sobre a
-  // nossa área (sem reanexar o canvas WebGL a outro nó do DOM)
+  // Quando o widget fica pronto, move o [vw-plugin-wrapper] para nossa área
   useEffect(() => {
-    if (fase !== 'pronto' || !containerRef.current) return
+    if (fase !== 'pronto' || !containerRef.current || wrapperMovidoRef.current) return
 
-    definirAncora(containerRef.current)
+    const wrapper = document.querySelector('[vw-plugin-wrapper]')
+    if (!wrapper) return
+
+    // Move o wrapper para dentro da nossa div
+    containerRef.current.appendChild(wrapper)
+    wrapperMovidoRef.current = true
 
     // Se já temos texto esperando, traduz agora
     if (autoplay && texto && textoAnteriorRef.current !== texto) {
       setTimeout(() => fazerTradução(texto), 500)
-    }
-
-    return () => {
-      liberarAncoraSe(containerRef.current)
     }
   }, [fase])
 
