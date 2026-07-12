@@ -36,9 +36,25 @@ function assinarEstado(fn) {
 
 // ── Inicialização do widget ────────────────────────────────────────────────
 
+// O runtime Unity/WebGL do avatar VLibras chama window.alert() diretamente
+// quando crasha (ex: "memory access out of bounds" ao mover o canvas no DOM).
+// Interceptamos para não travar a tela com um alert nativo e cair no fallback de texto.
+function interceptarAlertDoUnity() {
+  const alertOriginal = window.alert
+  window.alert = function (mensagem) {
+    if (typeof mensagem === 'string' && /unity content|memory access out of bounds/i.test(mensagem)) {
+      console.warn('VLibras: avatar Unity crashou, usando fallback de texto:', mensagem)
+      notificarListeners('erro')
+      return
+    }
+    alertOriginal.call(window, mensagem)
+  }
+}
+
 function iniciarVLibras() {
   if (estadoGlobal.fase !== 'nao_iniciado') return
   notificarListeners('carregando')
+  interceptarAlertDoUnity()
 
   // 1. Cria container oficial do widget no body
   if (!document.getElementById('vlibras-root')) {
